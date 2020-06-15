@@ -1,1 +1,29 @@
+# 显示所有数据库
+show databases;
 
+# 使用数据库
+# use databse;
+
+# 显示所有表名
+show tables;
+
+# 查询tables全部数据
+select * from tables
+
+# 查询tables字段（filed_one列）全部信息
+select filed_one from tables
+
+# 查询tables信息 并添加条件 id = 1的
+select * from tables where id = 1
+
+# 插入数据
+insert into table (key1,key2) values("first_name","last_name")
+
+# 删除数据
+delete from tables where id = 1;
+
+# 修改数据
+update tables set key1 = 'vlaue1',key2='value2';
+
+# 清空表数据
+truncate table 【表名】
