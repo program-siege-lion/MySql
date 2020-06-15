@@ -27,3 +27,7 @@ update tables set key1 = 'vlaue1',key2='value2';
 
 # 清空表数据
 truncate table 【表名】
+
+# drop 删除表结构，数据
+drop table 【表名】
+
