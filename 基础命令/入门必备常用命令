@@ -31,3 +31,5 @@ truncate table 【表名】
 # drop 删除表结构，数据
 drop table 【表名】
 
+待完善....
+
