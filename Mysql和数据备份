@@ -1,1 +1,28 @@
+数据备份
+  不登录MySQL，在Shell备份指定的一个或多个数据库，如下：
+    mysqldump --databases 【数据库名称】 【数据库名称】 > file.sql -u【账户】 -p【密码】
 
+  备份全部的数据库，可以使用 --all--databases，如下：
+    mysqldump --all-databases > file.sql
+
+  如果mysqldump 没有--databases 选项会将第一个名称试为数据库名称，后续将试为表名称 如下：
+    mysqldump 【数据库名称】 【表名】 【表名】 > file.sql
+
+数据还原
+  数据还原有两种方式，第一种是将备份文件的数据通过shell命令导入到数据库当中，另一种方式是通过登录mysql，在mysql命令行当中进行该数据恢复
+  如果文件当中不包含create database 和use语句的但数据库文件，首先我们需要去创建数据库，确保数据库存在
+  示例一：
+    mysql < file.sql
+    mysql dbname < file.sql
+  实例二：
+    souce file.sql
+
+总结：
+    如果使用了--all--databases OR --databases 选项，在加载数据文件的时候，如果数据库不存在，他将自动创建数据库，以便将数据内容加载到他们所来自 统一数据库；
+    如果在加载文件之前我们不需要转储文件当中的某个数据库，我们可以使用--add-dorp-databases选项
+    
+    使用mysqldump备份数据  没有--databases区别:
+      如果要加载的数据不存在，必须创建数据库
+      加载文件时，必须指定默认的数据库名称，以便服务器知道要加载的数据库
+      在加载时，可以指定与原始名称不同的数据库名称，可以可以将数据加载到其他数据库中
+      由于不使用 --all-databases 和 --databases 选项，所以不支持在加载文件的时候删除某个数据库
