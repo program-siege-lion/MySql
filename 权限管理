@@ -1,0 +1,21 @@
+mysql可能有很多用户，root用户适用于管理，但是对某个需要使用该系统的用户，我们都会为其创建一个账号，以此提供数据的安全性，根据某个用户给定相对应的权限就可以了。
+
+GRANT 和 REVOKE 命令 
+GRANT 和 REVOKE 命令用来管理访问权限，同时还可以创建和删除用户，GRANT 和 REVOKE 命令对于服务器以及各方面操作提供了多粒度控制，从谁可以关闭服务器到谁可以修改特定表字段中的信息都可以控制。
+
+代码实践：
+创建用户
+
+CREATE USER 'sunshaolei'@'localhost' IDENTIFIED BY '123456';
+在我们创建完用户之后，用户刚开始是没有任何权限的；
+返回信息：Query OK，0 rows affected (0.00 sec)
+授予INSERT权限
+
+ GRANT INSERT ON test.* TO 'sunshaolei'@'localhost';
+ 命令执行完之后我们就可以对test库下面所有的表，进行插入操作
+ 返回信息：Query OK，0 rows affected (0.00 sec)
+撤销用户权限
+
+REVOKE INSERT ON test.* FROM 'sunshaolei'@'localhost';
+当我们执行完之后，用户对于test下面的表就不能进行插入操作了
+返回信息：Query OK，0 rows affected (0.00 sec)
