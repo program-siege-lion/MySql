@@ -31,5 +31,7 @@ truncate table 【表名】
 # drop 删除表结构，数据
 drop table 【表名】
 
-待完善....
+# 对数据库查询数据并排序，不加排序的方式 默认是升序。
+select * from 【表名】 order by 【字段名】 desc,【字段名】 asc
+
 
