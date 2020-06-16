@@ -1,0 +1,40 @@
+使用mysql二进制文件恢复，首先要确保要打开二进制，而要从二进制日志进行数据恢复，首先必须要知道当前使用的日志文件名称和位置，例：
+     登录mysql客户端可以查看是否开启二进制并查看二进制文件保存路径
+        show variables like 'loke_bin%';
+     查看当前使用的二进制文件：
+        show master status;
+     查看所有的二进制文件列表
+        show master logs;
+备注：mysqlbinlog可以将二进制格式的二进制文件转化成文本，以便查看和执行。
+  MySQL二进制有两个最重要的使用场景:
+         其一：在搭建主从复制的时候通过主服务器将命令写入到二进制文件当中，从服务器进行拉取，从而达到数据一致。
+         其二：自然就是数据恢复了，通过使用mysqlbinlog工具来使恢复数据。
+重点：
+    以事件时间或位置在执行恢复部分日志内容时，查看日志是非常重要的,我们可以在日志当中看到很多信息
+         mysql客户端查看方式：show binlog events in 'mysql-bin.000001';
+         linux 查看日志方式：mysqlbinlog msql-bin.000001
+    备注：当然也可以将日志保存在文本当中进行查看 mysqlbinlog mysql-bin.000001 > tmpfile
+重点安全问题：
+    如果我们要在服务器查看多个二进制日志文件，安全查看的方式是使用单个连接进行访问，
+    如果第一个日志当中包含了创建临时表（CREATE TEMPORARY TABLE），而第二个包含了使用临时表的语句，那么在第一个进程终止的时候会删除临时表，当第二个进程在尝试使用该表的时候，服务器会提示 这个临时表是未知的。
+ 
+为避免这种问题，我们可以将要执行的所有二进制内容使用单连接方式进行处理，另一种方式是将所有的日志写入单个文件当中，然后处理该文件。
+     单个连接执行处理所有日志：mysqlbinlog binlog.000001 binlog.000002 | mysql -u root -p
+      以文本形式写入单个文件：
+         mysqlbinlog binlog.000001 > /tmp/statements.sql
+         mysqlbinlog binlog.000002 >> /tmp/statements.sql
+         mysql -u root -p -e "source /tmp/statements.sql"
+在从包含GTID的二进制日志中读取时写入转储文件时，请使用mysqlbinlog--skip-gtids选项 ，如下所示：
+     mysqlbinlog --skip-gtids binlog.000001 > /tmp/dump.sql
+     mysqlbinlog --skip-gtids binlog.000002 >> /tmp/dump.sql
+     mysql -u root -p -e "source /tmp/dump.sql"
+啰嗦完了 下面将进入动手场景，手动恢复数据：
+    根据时间进行数据恢复，我们可以使用不同的选项，根据日志当中读取出来的时间进行数据恢复
+使用时间位置尽心进行数据恢复，时间恢复总共有两个参数选项，--start-datetime,--stop-datetime 可以根据指定的时间进行数据恢复，下面介绍我们在04-04 12:01的时候不小心执行了 drop table tables 命令，那我们可以将根据时间将数据恢复到之前，另外我们还可以使用--start-datetime和--stop-datetime相结合，进行数据区段恢复。
+  mysqlbinlog --no-defaults --stop-datetime="2019-04-04 12:00:00" --databases=db1  mysql-bin-000001 | mysql -uroot -p
+--start-position 和 --stop-position 选项，可用于指定日志位置的操作进行数据恢复，他们的工作方式跟日期的工作方式是相同的，如果要想使用位置进行数据恢复，首先要确定日志里面的位置，我们可以通过查看日志的方式来获取位置。log_pos的数字就代表位置。
+     mysqlbinlog  --no-defaults  --stop-position=21038 --database=db mysql-bin.000005 | mysql -uroot -p;
+总结 日志恢复方式有两种方式：
+    1、查看日志的方式
+    2、利用时间点进行数据恢复
+    3、利用位置进行数据恢复
