@@ -1,0 +1,71 @@
+搭建主从复制，首先必须确保开启了二进制日志记录，并建立唯一的server_id，因为主服务器上面需要二进制日志记录，因为二进制日志是同步数据的必备条件之一。
+
+查看是否开启了二进制日志
+  log-bin为ON表示开启，OFF表示未开启
+  show variables like 'log-bin%;
+  
+每个服务器中都必须配置一个唯一的服务器ID，可以使用 server_id 系统变量来制定该ID,以此来标识服务器。
+
+注意： server_id必须是 1到（2 32）-1 之间的正整数，如果在主服务器上将服务器ID设置为0，则它拒绝来自从服务器的任何连接；如果在从服务器上将服务器ID设置为0，则它拒绝连接到主服务器。
+创建用户信息
+创建任意用户，用该用户的账户进行连接，并授予REPLICATION SLAVE 权限， 例如，要设置一个新用户，repl该用户可以从example.com域内的任何主机进行复制连接，请在主服务器mysql当中执行以下语句：
+  登录mysql 创建用户
+  mysql> CREATE USER 'repl'@'%.example.com' IDENTIFIED BY 'password';
+  mysql> GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%.example.com';
+  mysql> plush privileges; #刷新
+
+  mysql> FLUSH TABLES WITH READ LOCK;   # 刷新所有表，并阻止写入语句
+注意事项：
+  使用新的主服务器和从服务器设置复制
+  设置现有数据设置复制
+  使用现有数据设置复制
+    1、在主服务器上面备份要复制的数据库
+    sehll> tar zcvf dbname.tar.gz /usr/mysql/data # 数据目录  
+    
+    2、在从服务器上面scp备份的数据到数据目录下
+    shell> scp dbname.tar.gz ./
+    mysql> SHOW MASTER STATUS;
+    MYSQL> UNLOCK TABLES; 给数据库解锁
+    
+    server_id=1
+    log-bin=/usr/local/mysql/binlog # /usr/local/mysql/bin-log/ || mysql-bin  二进制文件位置，可以默认也可以创建新目录并且授予可写权限。
+    binlog-do-db=dbname #需要同步的数据库，默认都同步
+    binlog-ignore-db=dbname #需要忽略的数据库，默认不忽略任何数据库
+    
+修改从服务器my.cnf配置
+将从master 备份的数据解压到相应的数据目录
+  shell> tar zxvf dbname.tar.gz ./
+  shell> service mysql restart
+
+修改配置my.cnf，有的话修改，没有添加
+  server_id=2
+  #replicate-do-db=mydbname  # 默认同步所有的数据库
+  master-host=192.168.45.6
+  master-user=repl
+  master-password='123456'
+  login-bin=
+  重启master 和slave的mysql 服务
+
+然后重启之后登陆mysql命令行，从库连接主库设置连接信息，将一下信息替换成刚刚创建的用户信息
+  mysql> stop slave;
+  mysql> CHANGE MASTER TO
+      ->     MASTER_HOST='master_host_name',    # 主服务器地址
+      ->     MASTER_USER='replication_user_name',    #用户名 
+      ->     MASTER_PORT=3306,    #端口号
+      ->     MASTER_CONNECT_RETRY=10,  # 连接超时时间
+      ->     MASTER_PASSWORD='replication_password',    #用户密码
+  mysql> start slave;
+  mysql> show slave status\G;
+  
+  基于现有数据设置主从搭建
+使用主数据设置复制时，请在开始之前将快照从主数据库传输到从数据库服务器上面，将数据导入到从服务器的过程取决于您如何在主服务器上创建数据快照。
+
+一、使用mysqldump导入转储文件，
+
+1、使用该--skip-slave-start 选项启动从服务器，以是复制不会开始
+shell> mysql < file.dump
+二、使用原始数据文件创建快照，将数据文件提取到从属数据目录中
+
+shell> tar xvf file.tar # 可能需要在文件上设置权限和所有权，便于让从服务器访问和修改
+从站配置从站的复制坐标，这告诉从服务器二进制文件和文件复制开始的地方
+mysql> START SLAVE;
